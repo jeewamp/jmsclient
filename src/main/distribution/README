@@ -1,0 +1,18 @@
+command:
+    sh run.sh [Arguments]
+
+Argument format:
+    [ queueName sender|receiver (messageFile) (count) (headerString) ]
+
+Arguments:
+    queueName         : name of the queue in the message broker.
+    sender | receiver : specify if used by a message sender or a receiver.
+    messageFile       : (optional) The file which has the message to be sent. if a
+                        directory is given all the files in that directory will be sent.
+                        If non is given a default message will be sent. This is used by
+                        the sender.
+    count             : (optional) The number of times a single message should be sent.
+                        If not specified, a single message will be sent only once.
+    headerString      : (optional) The JMS headers to be sent. The headerString format
+                        should be in name value pairs separated by commas.
+                        Ex. "A=B,C=D,E=F"

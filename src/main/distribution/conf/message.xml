@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Message xmlns="http://testing.wso2.org/messages/">
+    <header>
+        <msgType>TEST</msgType>
+        <msgName>message</msgName>
+        <version>1</version>
+        <timeStamp>2000-12-01 23:40:03</timeStamp>
+    </header>
+    <payload>
+        <Text>Hello this is a test message</Text>
+    </payload>
+</Message>
