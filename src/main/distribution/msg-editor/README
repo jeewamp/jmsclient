@@ -1,0 +1,1 @@
+mvn install:install-file -DgroupId=org.wso2.testing -DartifactId=jmsclient -Dversion=1.0-SNAPSHOT -Dpackaging=jar -Dfile=../lib/jmsclient-1.0-SNAPSHOT.jar

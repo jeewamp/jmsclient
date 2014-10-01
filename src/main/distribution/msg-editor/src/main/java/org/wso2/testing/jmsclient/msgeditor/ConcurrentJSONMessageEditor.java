@@ -8,7 +8,7 @@ import org.wso2.testing.jmsclient.MessageEditor;
 import java.util.ArrayList;
 import java.util.Map;
 
-public class JSONMessageEditor implements MessageEditor {
+public class ConcurrentJSONMessageEditor implements MessageEditor {
     public ArrayList<String> editMessages(ArrayList<String> messages, int count) {
 
         ArrayList<String> newMessages = new ArrayList<String>();

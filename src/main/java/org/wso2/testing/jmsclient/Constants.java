@@ -28,4 +28,9 @@ public class Constants {
     public static final String JNDI_PROP_FILE_NAME = "jndi.properties";
     public static final String JMS_CLIENT_PROP_FILE_NAME = "jmsclient.properties";
     public static final String TEST_MSG_FILE_NAME = "message.xml";
+
+    public static final String CONCURRENT_MSG_EDITOR = "concurrentMessageEditor";
+    public static final String SERIES_MSG_EDITOR = "seriesMessageEditor";
+    public static final String PRINT_LOGS_PROP = "print.logs";
+    public static final String SEND_ASYNC_PROP = "send.async";
 }

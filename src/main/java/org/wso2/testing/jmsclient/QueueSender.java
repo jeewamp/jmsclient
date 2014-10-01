@@ -19,33 +19,33 @@
 package org.wso2.testing.jmsclient;
 
 import javax.jms.*;
-import javax.jms.Queue;
 import javax.naming.NamingException;
 import java.io.*;
 import java.net.URISyntaxException;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * @author  jeewantha.
  */
-public class QueueSender extends JMSQueue {
+public class QueueSender {
 
-    private QueueSession queueSession;
-    private QueueConnection queueConnection;
-    private MessageProducer queueSender;
-    private MessageEditor messageEditor;
+    String queueName;
 
-    public QueueSender(String queueName, MessageEditor messageEditor) {
-        super(queueName);
-        this.messageEditor = messageEditor;
+    public QueueSender(String queueName) {
+        this.queueName = queueName;
+
     }
 
     /**
      * @param filePath     to the messageFile or a directory containing messageFiles.
      * @param headerString containing JMS headers. "header1=value1;header2=value2"
-     * @param count
+     * @param concurrency
+     * @param number
      */
-    public void sendMessagesFromFileSystem(String filePath, String headerString, int count) throws JMSClientException {
+    public void sendMessagesFromFileSystem(String filePath, String headerString,
+                                           int concurrency, int number) throws JMSClientException {
 
         Map headerMap = headerString == null ? new HashMap() : getHeadersFromString(headerString);
 
@@ -68,13 +68,13 @@ public class QueueSender extends JMSQueue {
                 String message = readFile(nextFile);
                 messages.add(message);
             }
-            sendMessages(messages, headerMap, count);
+            sendMessages(messages, headerMap, concurrency, number);
         } catch (Exception e) {
             throw new JMSClientException("Cannot send message ", e);
         }
     }
 
-    public void sendTestMessage(int count) throws JMSClientException {
+    public void sendTestMessage(int number) throws JMSClientException {
 
         Map headerMap = new HashMap();
         ArrayList messages = new ArrayList<String>();
@@ -83,7 +83,7 @@ public class QueueSender extends JMSQueue {
                     System.getProperty("file.separator")+ Constants.TEST_MSG_FILE_NAME;
             String message = readResource(resourcePath);
             messages.add(message);
-            sendMessages(messages, headerMap, count);
+            sendMessages(messages, headerMap, 0, number);
         } catch (Exception e) {
             throw new JMSClientException("Cannot send message ", e);
         }
@@ -93,52 +93,21 @@ public class QueueSender extends JMSQueue {
      * Send the messages in messages ArrayList with the headers given. One message count number of
      * times.
      */
-    private void sendMessages(ArrayList<String> messages, Map<String, String> headers, int count) throws NamingException, JMSException, IOException, InterruptedException, JMSClientException {
-        try {
-            // Lookup connection factory
-            QueueConnectionFactory connFactory = (QueueConnectionFactory) initialContext.lookup(lookupName);
-            queueConnection = connFactory.createQueueConnection();
-            queueSession = queueConnection.createQueueSession(false, QueueSession.AUTO_ACKNOWLEDGE);
-
-            // Send message sender
-            Queue queue = (Queue) initialContext.lookup(queueName);
-            queueSender = queueSession.createProducer(queue);
-            queueConnection.start();
-
-            // create the message to send
-
-            for (int j = 1; j <= count; j++) {
-                if(messageEditor != null) {
-                    ArrayList editedMessages = messageEditor.editMessages(messages, j);
-                    Map editedHeaders = messageEditor.editHeaders(headers, j);
-                    if(editedMessages != null) {
-                        messages = editedMessages;
-                    }
-                    if (editedHeaders != null) {
-                        headers = editedHeaders;
-                    }
-                }
-                for (String message : messages) {
-                    TextMessage tx = queueSession.createTextMessage(message);
-                    for (Map.Entry<String, String> entry : headers.entrySet()) {
-                        String key = entry.getKey();
-                        String value = entry.getValue();
-                        tx.setStringProperty(key, value);
-                    }
-                    System.out.println("sending... count = " + j);
-                    queueSender.send(tx);
-                    Thread.sleep(1);
-                }
-            }
+    private void sendMessages(ArrayList<String> messages, Map<String, String> headers,
+                              int concurrency, int number) throws NamingException, JMSException,
+        IOException,
+        InterruptedException, JMSClientException {
+        ExecutorService executor = Executors.newFixedThreadPool(500);
+        long time = System.currentTimeMillis();
+        for (int i = 1; i <= concurrency; i++) {
+            Runnable worker = new QueueSenderWorker(queueName, messages, headers, i, number);
+            executor.execute(worker);
         }
-        catch (Exception e) {
-            throw new JMSClientException("Error when Seding message",e);
+        executor.shutdown();
+        while (!executor.isTerminated()) {
         }
-        finally {
-            if (queueConnection != null) queueConnection.close();
-            if (queueSession != null) queueSession.close();
-            if (queueSender != null)queueSender.close();
-        }
+        System.out.println("Finished sending all events in "+ (System.currentTimeMillis() - time)
+                + "millis.");
     }
 
     /**
@@ -192,5 +161,4 @@ public class QueueSender extends JMSQueue {
             scanner.close();
         }
     }
-
 }
